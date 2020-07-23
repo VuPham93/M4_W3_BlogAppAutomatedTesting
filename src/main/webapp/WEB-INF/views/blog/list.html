@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Blogs</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            $('.deleteClass').click(function (event) {
+                let clickedId = $(this);
+                let blogId = clickedId.attr("href");
+                $.ajax({
+                    type: 'DELETE',
+                    url: '/blogs/delete/' + blogId,
+                    success: function () {
+                        clickedId.parent().parent().remove();
+                    }
+                });
+                event.preventDefault();
+            });
+        });
+
+        function searchBlog() {
+            let className = $('#search');
+            let search = className.val();
+            $.ajax({
+                type: 'GET',
+                url: '/blogs/search/' + search,
+                success: function (data) {
+                    let content = '<tr><th>Name</th><th>Category</th><th>Detail</th><th>Edit</th><th>Delete</th></tr>'
+                    for (let i = 0; i < data.length; i++) {
+                        content += getClass(data[i]);
+                    }
+                    document.getElementById('blogList').innerHTML = content;
+                }
+            })
+            event.preventDefault();
+        }
+
+        function getClass(blog) {
+            return `<tr>
+                        <td>${blog.name}</td>
+                        <td>${blog.category.name}</td>
+                        <td>${blog.detail}</td>
+                        <td><a href="#"></a>Edit</a></td>
+                        <td><a class="deleteClass" href="${blog.id}">Delete</a></td>
+                    </tr>`;
+        }
+
+        let clickTime = 0;
+        function loadMore() {
+            $.ajax({
+                type: 'GET',
+                url: '/blogs/list',
+                success: function (data) {
+                    let content = '<tr><th>Name</th><th>Category</th><th>Detail</th><th>Edit</th><th>Delete</th></tr>'
+                    for (let i = 10*clickTime; i < 10+10*clickTime; i++) {
+                        content += getClass(data[i]);
+                    }
+                    document.getElementById('blogList').innerHTML = content;
+                    clickTime++;
+                }
+            })
+            event.preventDefault();
+        }
+    </script>
+</head>
+<body>
+
+<h1>Blogs</h1>
+<a href="/create-blog">Create new blog</a>
+<form id="searchForm">
+    Search by name:
+    <input name="search" id="search" type="text"/>
+    <input type="submit" id="btn-search" value="Search" onclick="searchBlog()">
+</form>
+<br/>
+<ul th:each="category: ${categories}">
+    <li><a th:href="@{/detail-category/__${category.id}__}" th:text="${category.name}"></a></li>
+</ul>
+
+
+<table border="1" id="blogList">
+    <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Detail</th>
+        <th>Edit</th>
+        <th>Delete</th>
+    </tr>
+    <th:block th:each="blog : ${blogList}">
+        <tr>
+            <td><a th:text="${blog.name}" th:href="${blog.id}"></a></td>
+            <td th:text="${blog.category.name}"></td>
+            <td th:text="${#strings.substring(blog.detail, 0, 30)}"></td>
+            <td><a th:href="${blog.id}">Edit</a></td>
+            <td><a class="deleteClass" th:href="${blog.id}">Delete</a></td>
+        </tr>
+    </th:block>
+</table>
+<button class="loadMore" onclick="loadMore()">Load more</button>
+</body>
+</html>
